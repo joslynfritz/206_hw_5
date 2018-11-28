@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+
 ```{r packages and files}
 
 library(tidyverse)
@@ -34,4 +36,13 @@ phd_fields <- read_csv("PhDs by Field.csv")
 ```
 
 
+
+```{r}
+
+total_grad_mvf <- ggplot(grad_enroll, aes(x = year, y = male_total)) + 
+  geom_line() +
+  geom_point()
+total_grad_mvf
+
+```
 

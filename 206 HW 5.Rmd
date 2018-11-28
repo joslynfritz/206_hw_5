@@ -1,0 +1,37 @@
+---
+title: "206 HW 5"
+author: "Joslyn Fritz"
+date: "11/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages and files}
+
+library(tidyverse)
+library(tidyr)
+library(vcdExtra)
+library(car)
+library(onewaytests)
+library(gridExtra)
+library(kableExtra)
+library(effsize)
+library(ggplot2)
+library(ggsignif)
+library(stargazer)
+
+faculty_salary <- read_csv("Faculty salary data.csv")
+
+doc_med_salary <- read_csv("Median salary for doctorals.csv")
+
+grad_enroll <- read_csv("Grad enrollment.csv")
+
+phd_fields <- read_csv("PhDs by Field.csv")
+
+```
+
+
+

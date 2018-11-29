@@ -119,68 +119,82 @@ total_grad_mvf
 
 #### 2. Shifts in Phd recipients by field of study (1985, 2000, 2015)
 
-```{r}
+```{r, echo = FALSE}
 
-# Chi-squared
+phd_female <- phd_fields %>% 
+  spread(year, number)%>%  # Spread out the year designations by number
+  select(-gender, -field) # removed gender and field columns
+phd_female
 
-phd_1985 <- read_csv("phd_1985.csv") %>% 
-  select(Male, Female)  
-  
-rownames(phd_1985) <- c("Physical sciences and earth sciences", "Engineering", "Education", "Humanities and arts")
+rownames(phd_female) <- c("education", "engineering", "humanities_art", "physical_earth") # Change row names in df such that only numbers exist in the center
 
-prop_1985 <- prop.table(as.matrix(phd_1985), 1)
-prop_1985
 
-chi_test <- chisq.test(phd_1985)
-chi_test
+# Let's look at the actual proportions:
 
-# I remade the dataframs "phd_fields" which should work better in this chi squared test.
+female_prop <- prop.table(as.matrix(phd_female), 1) # Updates phd_female to a matrix for it to work in prop.table. The 1 is the margin over which to calculate proportion
+female_prop
+
+
+# Run a chi-squared test for independence
+
+#H0: No significant difference between proportions in year
+
+phd_female_chi2 <- chisq.test(phd_female)
+phd_female_chi2
+
+```
+
+
+number of female phd recipients per field differed significantly between 1985 (n = ) and 2000 (n = ) and 2015 (n =) ($\chi^2${`r phd_female_chi2$parameter`} = ....., p < 0.001). Notably, ....
+
+```{r, results = 'asis'}
+
+# Make a table of proportions
+
+prop_table <- stargazer(female_prop, type = "html")
+prop_table
 
 ```
 
 
 #### 3. Male and female salaries for starting postdoc and other positions (2015)
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, include = FALSE}
 
 # Exploratory graph
 
 postdoc_med_salary <- med_salary %>%
-  filter(status == "Postdoc")
+  filter(status == "postdoc")
 
-postdoc_hist <- ggplot(postdoc_med_salary, aes(x = med_income))+
-  geom_histogram(bins = 6) +
-  facet_wrap(~ gender)
+postdoc_hist <- ggplot(postdoc_med_salary, aes(x = male))+
+  geom_histogram(bins = 6)
 postdoc_hist
 
 emp_med_salary <- med_salary %>% 
-  filter(status == "Employment")
+  filter(status == "employment")
 
-emp_hist <- ggplot(emp_med_salary, aes(x = med_income)) +
-  geom_histogram(bins = 6) +
-  facet_wrap(~ gender)
+emp_hist <- ggplot(emp_med_salary, aes(x = male)) +
+  geom_histogram(bins = 6)
 emp_hist
 
 ```
 
 ```{r, echo = FALSE}
 
-# Mann-Whitney U (non-parametric, unpaired)
+# Wilcoxon-Signed Ranked (non-parametric, paired)
 
 # Ho: There is NOT a significant differnece in median salary for male and female starting postdoc positions.
 # HA: There is a significant difference in mdeian salary for male and female starting postdoc positions.
 
-mwu_postdoc <- postdoc_med_salary %>%
-  wilcox.test(med_income ~ gender, data =.) # Default is a Mann-Whitney U for unpaired data
-mwu_postdoc
+wsr_postdoc <- wilcox.test(postdoc_med_salary$male, postdoc_med_salary$female, paired = TRUE)
+wsr_postdoc
 
 
 # Ho: There is NOT a significant differnece in median salary for male and female starting non-postdoc positions.
 # HA: There is a significant difference in mdeian salary for male and female starting non-postdoc positions.
 
-mwu_emp <- emp_med_salary %>%
-  wilcox.test(med_income ~ gender, data =.)
-mwu_emp
+wsr_emp <- wilcox.test(emp_med_salary$male, emp_med_salary$female, paired = TRUE)
+wsr_emp
 
 ```
 There was no significant difference in median salary for male and female starting postdoc positions (W = 180, p = 0.867, alpha = 0.05)

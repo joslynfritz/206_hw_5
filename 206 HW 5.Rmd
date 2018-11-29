@@ -156,7 +156,7 @@ postdoc_hist
 emp_med_salary <- med_salary %>% 
   filter(status == "Employment")
 
-emp_hist <- ggplot(emp_med_salary, aes(x = med_income))+
+emp_hist <- ggplot(emp_med_salary, aes(x = med_income)) +
   geom_histogram(bins = 6) +
   facet_wrap(~ gender)
 emp_hist

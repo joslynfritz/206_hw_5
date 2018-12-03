@@ -26,6 +26,7 @@ library(kableExtra)
 library(effsize)
 library(ggplot2)
 library(ggsignif)
+library(reshape2)
 
 faculty_salary <- read_csv("Faculty salary data.csv")
 
@@ -131,8 +132,8 @@ as.character(as.expression(eq));
 total_grad_mvf <- ggplot(grad_enroll, aes(x = year, y = male_total)) + 
   geom_point(aes(y = male_total, color = "Male")) +
   geom_point(aes(y = female_total, color = "Female")) +
-  geom_smooth(method = lm, se = F, aes(col = "Male"))+
-  geom_smooth(aes(x = year,  y = female_total, col = "Female"), method = lm, se = F)+
+  geom_smooth(method = lm, se = F, aes(col = "Male"), colour = "gray70")+
+  geom_smooth(aes(x = year,  y = female_total, col = "Female"), method = lm, se = F, colour = "gray70")+
     xlab("Year") +
   ylab("Total Enrollment") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -202,8 +203,16 @@ chi_table
 
 # stacked bar graph?
 
-test <- ggplot(data = female_prop, aes(x = 1995, 2000, 2015, fill = "Education", "Engineering", "Humanities & Art", "Physical Earth Sciences" )) +   
-  geom_bar(stat = "identity", position = "dodge")
+female_phd_new <- as.data.frame(phd_female) %>% 
+  mutate(., Field = c("Education", "Engineering", "Humanities & Art", "Physical Earth Sciences"))
+
+female_phd_melt <- melt(female_phd_new, id.vars = c("Field"), value.name = "Proportion")
+names(female_phd_melt)[2] <- paste("Year")
+
+column_stack <- ggplot()+
+  geom_bar(aes(x = Year, y= Proportion, fill = Field), data = female_phd_melt, stat = "identity")
+
+column_stack
 
 
 ### maybe we can add expected proportions to the table if there is no difference between the groups
@@ -233,9 +242,25 @@ emp_hist <- ggplot(emp_med_salary, aes(x = male)) +
   geom_histogram(bins = 6)
 emp_hist
 
-# Stacked bar graph to visually represent the data
+# Stacked bar graph to visually represent the data???
 
-med_salary_male <- ggplot(data = med_salary, aes(x = field, y = male, fill = status)) +   geom_bar(stat = "identity", position = "dodge")
+med_salary_male <- ggplot(data = emp_med_salary, aes(x = field, y = male, fill = status)) +   
+  geom_bar(stat = "identity", position = "dodge")
+
+ggplot(warp.m, aes(x = Wool, y = Breaks, group = Tension)) +
+geom_col(aes(fill = Tension),
+position = "dodge") +
+scale_fill_manual(values = c("gray70","gray40","gray20")) +
+theme(panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(),
+panel.background = element_blank(),
+axis.line = element_line(colour = "black")) +
+xlab("Wool Type") +
+ylab("Number of Breaks\nRecorded During Spinning") +
+ggtitle("Wool Strength by\nType and Tension") +
+scale_y_continuous(expand = c(0,0), limits = c(0,80), breaks = c(0,20,40,60,80)) +
+theme(text = element_text(family = "Times New Roman")) +
+theme(plot.title = element_text(hjust = 0.5))
 
 med_salary_male
 
@@ -246,7 +271,7 @@ med_salary_female
 
 test <- ggplot(data = emp_med_salary, aes(x = field, fill = male + female)) +   geom_bar(stat = "identity", position = "dodge")
 
-med_salary_graph
+
 ```
 
 ```{r, echo = FALSE, include=FALSE}
@@ -278,7 +303,14 @@ There was a significant difference in median salary for male and female starting
 faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
 faculty_salary_model
 
-pairs(faculty_salary)
+
+plot()
+summary()
+vif()
+aic()
+
+faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
+faculty_salary_model
 
 
 faculty_salary_new <- faculty_salary %>% 
@@ -315,22 +347,14 @@ faculty_salary_model2
 
 # Create a graph
 
-df_new <- data.frame(Faculty_Rank = rep(c("Prof",
-                                  "AsstProf",
-                                  "AssocProf" Years_Since_Phd, 
-                     Sex = rep(c("Male",
-                                    "Female")))
+
 
 # a. Make predictions using the new data frame:
 
-salary_predict <- predict(faculty_salary_model2, newdata = df_new, se.fit = TRUE, interval = "confidence")
+
 
 # b. Bind predictions to the data to make it actually useful:
 
-predict_df <- data.frame(df_new, price_predict)
-predict_graph <- ggplot(predict_df, aes(x= SqFt, y = fit.fit))+
-  geom_line(aes(color = City))+
-  facet_wrap(~Status)
-predict_graph
+
 ```
 

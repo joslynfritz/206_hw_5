@@ -9,25 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-
-```{r packages and files}
+```{r packages and files, echo = FALSE, include = FALSE}
 
 library(tidyverse)
-library(tidyr)
-library(vcdExtra)
-library(car)
-library(onewaytests)
-library(gridExtra)
-library(kableExtra)
-library(effsize)
-library(ggplot2)
-library(ggsignif)
 library(stargazer)
 
 faculty_salary <- read_csv("Faculty salary data.csv")
 
-doc_med_salary <- read_csv("Median salary for doctorals.csv")
+med_salary <- read_csv("Median salary for doctorals.csv")
 
 grad_enroll <- read_csv("Grad enrollment.csv")
 
@@ -36,29 +25,27 @@ phd_fields <- read_csv("PhDs by Field.csv")
 ```
 
 
+#### 1. Compare trends in graduate enrollment (1967-2015)
 
-```{r}
-## 1. compare trends in total graduate enrollment
+```{r, echo = FALSE, include = FALSE}
 
-total_grad_mvf <- ggplot(grad_enroll, aes(x = year)) + 
-  geom_line(aes(y = male_total, color = "male_total"))+
-  geom_line(aes(y = female_total, color = "female_total"))+
-  xlab("Year") +
-  ylab("Total Enrollment") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"), 
-        text = element_text(family = "serif"))+
-  theme(legend.text=element_text(size=15)) +
-  theme(legend.title=element_blank()) 
-  
-  total_grad_mvf
-  
+# Exploratory graph
 
+male_scatter <- ggplot(grad_enroll, aes(x = year, y = male_total)) +
+  geom_point()
+male_scatter
+
+# Overall the data looks linear. There are some outliers that fall outside of linear, but I think a linear regression is ok
+
+female_scatter <- ggplot(grad_enroll, aes (x = year, y = female_total)) +
+  geom_point()
+female_scatter
+
+# Overall the data looks linear. There are some outliers that fall outside of linear, but I think a linear regression is ok
 
 ```
 
-```{r}
-## Find the correlation coefficient for each line
+```{r, echo = FALSE}
 
 # Perform linear regression
 
@@ -66,13 +53,20 @@ male_model <- lm(male_total ~ year, data = grad_enroll)
 male_model
 summary(male_model)
 
+# Total male enrollment = 9060*(year) - 17112153 
+
 female_model <- lm(female_total ~ year, data = grad_enroll)
 female_model
 summary(female_model)
 
+# Total female enrollment = 30126*(year) - 58955502
+
+# multi-variable linear regression??
+  
 ```
 
-```{r}
+```{r, echo = FALSE, include = FALSE}
+
 # Model diagnostics 
 
 plot(male_model)
@@ -80,17 +74,78 @@ plot(female_model)
 
 ```
 
-```{r}
+```{r, echo = FALSE}
+
 # Pearson's R
+
+# H0: Correlation equals 0
+# HA: Correlation does not equal 0
 
 male_r <- cor.test(grad_enroll$male_total, grad_enroll$year)
 male_r
 
 female_r <- cor.test(grad_enroll$female_total, grad_enroll$year)
 female_r
+
 ```
-###2. Chi Squared shifts in Phd recipients by field of study
+
+Male: t(47) = 16.61, p < 0.001. Reject the null. Correlation = 0.92, which is a strong positive correlation.
+
+Year significantly predicts male graduate school enrollment (*b* = -17112153, t(`r male_r$parameter`) = `r round(male_r$statistic, 2)`, *p* < 0.001) with a strong positive correlation between the two (Pearson's *r* = `r round(male_r$estimate, 2)`). The overall model (Total gradute male enrollment = 9060(year) - 17112153) explains a significant amount of variance in male enrollment (F(1,47) = 276, *p* < 0.001, R^2^ = 0.85).
+
+Female: t(47) = 51.66, p < 0.001. Reject the null. Correlation = 0.99, which is a strong positive correlation.
+
+Year significantly predicts female graduate school enrollment (*b* = -17112153, t(`r male_r$parameter`) = `r round(male_r$statistic, 2)`, *p* < 0.001) with a strong positive correlation between the two (Pearson's *r* = `r round(male_r$estimate, 2)`). The overall model (Total gradute female enrollment = 30126(year) - 58955502) explains a significant amount of variance in male enrollment (F(1,47) = 2669, *p* < 0.001, R^2^ = 0.98).
+
+```{r, echo = FALSE}
+
+library(ggplot2)
+
+# I tried to displaythe equations for each line on the graph but it was super hard and have given up for now
+
+equation <-function(male_model){
+  m <- lm(y ~ x, male_model);
+  eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(coef(male_model)[1], digits = 2), 
+              b = format(coef(male_model)[2], digits = 2), 
+             r2 = format(summary(male_model)$r.squared, digits = 3)))
+as.character(as.expression(eq));
+}
+
+
+# Graph it
+
+total_grad_mvf <- ggplot(grad_enroll, aes(x = year, y = male_total)) + 
+  geom_point(aes(y = male_total, color = "Male")) +
+  geom_point(aes(y = female_total, color = "Female")) +
+  geom_smooth(method = lm, se = F, aes(col = "Male"))+
+  geom_smooth(aes(x = year,  y = female_total, col = "Female"), method = lm, se = F)+
+    xlab("Year") +
+  ylab("Total Enrollment") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"), 
+        text = element_text(family = "serif"))+
+  theme(legend.text=element_text(size = 15)) +
+  theme(legend.title=element_blank()) 
+    
+  
+total_grad_mvf
+
+
+
+# Find a way to rename legend
+
+
+
+```
+
+
+#### 2. Shifts in Phd recipients by field of study (1985, 2000, 2015)
+
 ```{r}
+
+# Chi-squared
+
 phd_1985 <- read_csv("phd_1985.csv") %>% 
   select(Male, Female)  
   
@@ -102,5 +157,68 @@ prop_1985
 chi_test <- chisq.test(phd_1985)
 chi_test
 
+# I remade the dataframs "phd_fields" which should work better in this chi squared test.
+
+```
+
+
+#### 3. Male and female salaries for starting postdoc and other positions (2015)
+
+```{r, echo = FALSE}
+
+# Exploratory graph
+
+postdoc_med_salary <- med_salary %>%
+  filter(status == "Postdoc")
+
+postdoc_hist <- ggplot(postdoc_med_salary, aes(x = med_income))+
+  geom_histogram(bins = 6) +
+  facet_wrap(~ gender)
+postdoc_hist
+
+emp_med_salary <- med_salary %>% 
+  filter(status == "Employment")
+
+emp_hist <- ggplot(emp_med_salary, aes(x = med_income)) +
+  geom_histogram(bins = 6) +
+  facet_wrap(~ gender)
+emp_hist
+
+```
+
+```{r, echo = FALSE}
+
+# Mann-Whitney U (non-parametric, unpaired)
+
+# Ho: There is NOT a significant differnece in median salary for male and female starting postdoc positions.
+# HA: There is a significant difference in mdeian salary for male and female starting postdoc positions.
+
+mwu_postdoc <- postdoc_med_salary %>%
+  wilcox.test(med_income ~ gender, data =.) # Default is a Mann-Whitney U for unpaired data
+mwu_postdoc
+
+
+# Ho: There is NOT a significant differnece in median salary for male and female starting non-postdoc positions.
+# HA: There is a significant difference in mdeian salary for male and female starting non-postdoc positions.
+
+mwu_emp <- emp_med_salary %>%
+  wilcox.test(med_income ~ gender, data =.)
+mwu_emp
+
+```
+There was no significant difference in median salary for male and female starting postdoc positions (W = 180, p = 0.867, alpha = 0.05)
+
+There was no significant difference in median salary for male and female starting postdoc positions (W = 88.5, p = 0.329, alpha = 0.05)
+
+#### 4. Exploring academic salaries for professors in U.S. colleges
+
+```{r}
+faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
+faculty_salary_model
+
+
+faculty_salary %>%
+  group_by(Faculty_Rank) %>% 
+  mutate(ranking = rank(ranking, na.last = TRUE, ties.method = c("Prof", "AssocProf", "AsstProf")))
 ```
 

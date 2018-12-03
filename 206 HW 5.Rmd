@@ -200,6 +200,13 @@ chi_table <- kable(female_prop, caption = "**Table 1. Proportions of female reci
    column_spec(4, width = "15em")
 chi_table
 
+# stacked bar graph?
+
+test <- ggplot(data = female_prop, aes(x = 1995, 2000, 2015, fill = "Education", "Engineering", "Humanities & Art", "Physical Earth Sciences" )) +   
+  geom_bar(stat = "identity", position = "dodge")
+
+
+### maybe we can add expected proportions to the table if there is no difference between the groups
 ```
 
 
@@ -226,6 +233,20 @@ emp_hist <- ggplot(emp_med_salary, aes(x = male)) +
   geom_histogram(bins = 6)
 emp_hist
 
+# Stacked bar graph to visually represent the data
+
+med_salary_male <- ggplot(data = med_salary, aes(x = field, y = male, fill = status)) +   geom_bar(stat = "identity", position = "dodge")
+
+med_salary_male
+
+med_salary_female <- ggplot(data = med_salary, aes(x = field, y = female, fill = status)) +   geom_bar(stat = "identity", position = "dodge")
+
+med_salary_female
+
+
+test <- ggplot(data = emp_med_salary, aes(x = field, fill = male + female)) +   geom_bar(stat = "identity", position = "dodge")
+
+med_salary_graph
 ```
 
 ```{r, echo = FALSE, include=FALSE}
@@ -257,12 +278,15 @@ There was a significant difference in median salary for male and female starting
 faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
 faculty_salary_model
 
+pairs(faculty_salary)
+
+
 faculty_salary_new <- faculty_salary %>% 
   mutate(
     Rank = case_when(
       Faculty_Rank == "Prof" ~ 1,
-      Faculty_Rank == "AsstProf" ~ 2,
-      Faculty_Rank == "AssocProf" ~ 3
+      Faculty_Rank == "AssocProf" ~ 2,
+      Faculty_Rank == "AsstProf" ~ 3
     )
   ) %>% 
   mutate(sex = case_when(

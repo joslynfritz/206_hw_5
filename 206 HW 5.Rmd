@@ -2,7 +2,10 @@
 title: "206 HW 5"
 author: "Joslyn Fritz"
 date: "11/28/2018"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,6 +16,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(stargazer)
+library(kableExtra)
+library(tidyr)
+library(vcdExtra)
+library(car)
+library(onewaytests)
+library(gridExtra)
+library(kableExtra)
+library(effsize)
+library(ggplot2)
+library(ggsignif)
 
 faculty_salary <- read_csv("Faculty salary data.csv")
 
@@ -45,7 +58,7 @@ female_scatter
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, include=FALSE}
 
 # Perform linear regression
 
@@ -74,7 +87,7 @@ plot(female_model)
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, include=FALSE}
 
 # Pearson's R
 
@@ -142,19 +155,19 @@ total_grad_mvf
 
 #### 2. Shifts in Phd recipients by field of study (1985, 2000, 2015)
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, include=FALSE}
 
 phd_female <- phd_fields %>% 
   spread(year, number)%>%  # Spread out the year designations by number
   select(-gender, -field) # removed gender and field columns
 phd_female
 
-rownames(phd_female) <- c("education", "engineering", "humanities_art", "physical_earth") # Change row names in df such that only numbers exist in the center
+rownames(phd_female) <- c("Education", "Engineering", "Humanities & Art", "Physical Earth Sciences") # Change row names in df such that only numbers exist in the center
 
 
 # Let's look at the actual proportions:
 
-female_prop <- prop.table(as.matrix(phd_female), 1) # Updates phd_female to a matrix for it to work in prop.table. The 1 is the margin over which to calculate proportion
+female_prop <- round(prop.table(as.matrix(phd_female), 1), 2) # Updates phd_female to a matrix for it to work in prop.table. The 1 is the margin over which to calculate proportion
 female_prop
 
 
@@ -165,22 +178,35 @@ female_prop
 phd_female_chi2 <- chisq.test(phd_female)
 phd_female_chi2
 
+
+
 ```
 
 
 number of female phd recipients per field differed significantly between 1985 (n = ) and 2000 (n = ) and 2015 (n =) ($\chi^2${`r phd_female_chi2$parameter`} = ....., p < 0.001). Notably, ....
 
-```{r, results = 'asis'}
+```{r, echo= FALSE}
 
 # Make a table of proportions
 
-prop_table <- stargazer(female_prop, type = "html")
-prop_table
+#prop_table <- stargazer(female_prop, type = "html")
+#prop_table
+
+chi_table <- kable(female_prop, caption = "**Table 1. Proportions of female recipients who earned a Phd in 1985, 2000 and 2015.**") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", full_width = F)) %>% 
+  column_spec(1, width = "15em", bold = T) %>% 
+  column_spec(2, width = "15em") %>% 
+  column_spec(3, width = "15em") %>% 
+   column_spec(4, width = "15em")
+chi_table
 
 ```
 
 
 #### 3. Male and female salaries for starting postdoc and other positions (2015)
+
+Does median salary differ significantly between male and female starting postdoc positions? Does median salary differ significantly between male and female PhD recipients in non-postdoc employment positions?
+
 
 ```{r, echo = FALSE, include = FALSE}
 
@@ -202,7 +228,7 @@ emp_hist
 
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, include=FALSE}
 
 # Wilcoxon-Signed Ranked (non-parametric, paired)
 
@@ -220,19 +246,67 @@ wsr_emp <- wilcox.test(emp_med_salary$male, emp_med_salary$female, paired = TRUE
 wsr_emp
 
 ```
-There was no significant difference in median salary for male and female starting postdoc positions (W = 180, p = 0.867, alpha = 0.05)
+There was no significant difference in median salary for male and female starting postdoc positions (W = 19.5, p = 0.884, alpha = 0.05)
 
-There was no significant difference in median salary for male and female starting postdoc positions (W = 88.5, p = 0.329, alpha = 0.05)
+There was a significant difference in median salary for male and female starting in non-post-doc employment positions (W = 101, p = 0.002, alpha = 0.05)
 
 #### 4. Exploring academic salaries for professors in U.S. colleges
 
-```{r}
+```{r, include= FALSE}
+
 faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
 faculty_salary_model
 
+faculty_salary_new <- faculty_salary %>% 
+  mutate(
+    Rank = case_when(
+      Faculty_Rank == "Prof" ~ 1,
+      Faculty_Rank == "AsstProf" ~ 2,
+      Faculty_Rank == "AssocProf" ~ 3
+    )
+  ) %>% 
+  mutate(sex = case_when(
+      Sex == "Male" ~ 1,
+      Sex == "Female" ~ 2
+  )
+  ) %>% 
+  select(Years_Since_Phd, Years_Service, Salary, Rank, sex) 
 
-faculty_salary %>%
-  group_by(Faculty_Rank) %>% 
-  mutate(ranking = rank(ranking, na.last = TRUE, ties.method = c("Prof", "AssocProf", "AsstProf")))
+  pairs(faculty_salary_new)
+
+faculty_salary_new
+
+# Years since phd and years in service are highly correlated and therefore one should be removed from the model:
+
+faculty_salary_model2 <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
+faculty_salary_model2
+
+faculty_salary_model$Faculty_Rank <- factor(faculty_salary_model$Faculty_Rank)
+
+faculty_salary_model$Faculty_Rank <- fct_relevel(faculty_salary_model$Faculty_Rank, "Prof")
+
+faculty_salary_model2 <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
+faculty_salary_model2
+
+
+# Create a graph
+
+df_new <- data.frame(Faculty_Rank = rep(c("Prof",
+                                  "AsstProf",
+                                  "AssocProf" Years_Since_Phd, 
+                     Sex = rep(c("Male",
+                                    "Female")))
+
+# a. Make predictions using the new data frame:
+
+salary_predict <- predict(faculty_salary_model2, newdata = df_new, se.fit = TRUE, interval = "confidence")
+
+# b. Bind predictions to the data to make it actually useful:
+
+predict_df <- data.frame(df_new, price_predict)
+predict_graph <- ggplot(predict_df, aes(x= SqFt, y = fit.fit))+
+  geom_line(aes(color = City))+
+  facet_wrap(~Status)
+predict_graph
 ```
 

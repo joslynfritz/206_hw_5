@@ -27,6 +27,9 @@ library(effsize)
 library(ggplot2)
 library(ggsignif)
 library(reshape2)
+library(RColorBrewer)
+library(plotly)
+library(bit)
 
 faculty_salary <- read_csv("Faculty salary data.csv")
 
@@ -138,7 +141,7 @@ total_grad_mvf <- ggplot(grad_enroll, aes(x = year, y = male_total)) +
   ylab("Total Enrollment") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"), 
-        text = element_text(family = "serif"))+
+        )+
   theme(legend.text=element_text(size = 15)) +
   theme(legend.title=element_blank()) 
     
@@ -194,11 +197,12 @@ number of female phd recipients per field differed significantly between 1985 (n
 #prop_table
 
 chi_table <- kable(female_prop, caption = "**Table 1. Proportions of female recipients who earned a Phd in 1985, 2000 and 2015.**") %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", full_width = F)) %>% 
-  column_spec(1, width = "15em", bold = T) %>% 
-  column_spec(2, width = "15em") %>% 
-  column_spec(3, width = "15em") %>% 
-   column_spec(4, width = "15em")
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F) %>% 
+  column_spec(1, width = "12em", bold = T) %>% 
+  column_spec(2, width = "8em") %>% 
+  column_spec(3, width = "8em") %>% 
+   column_spec(4, width = "8em")
+  
 chi_table
 
 # stacked bar graph?
@@ -210,7 +214,11 @@ female_phd_melt <- melt(female_phd_new, id.vars = c("Field"), value.name = "Prop
 names(female_phd_melt)[2] <- paste("Year")
 
 column_stack <- ggplot()+
-  geom_bar(aes(x = Year, y= Proportion, fill = Field), data = female_phd_melt, stat = "identity")
+  geom_bar(aes(x = Year, y= Proportion, fill = Field), data = female_phd_melt, stat = "identity")+
+  labs(y="Median Salary (US Dollars)")+
+  theme_classic()+
+  scale_fill_manual(values= c("aquamarine3", "aquamarine1", "cornflowerblue", "turquoise4"))+
+  scale_y_continuous(expand = c(0,0))
 
 column_stack
 
@@ -224,12 +232,12 @@ column_stack
 Does median salary differ significantly between male and female starting postdoc positions? Does median salary differ significantly between male and female PhD recipients in non-postdoc employment positions?
 
 
-```{r, echo = FALSE, include = FALSE}
+```{r, echo = FALSE, fig.width= 10, fig.height= 7, fig.align = 'center'}
 
 # Exploratory graph
 
 postdoc_med_salary <- med_salary %>%
-  filter(status == "postdoc")
+  filter(status == "postdoc") 
 
 postdoc_hist <- ggplot(postdoc_med_salary, aes(x = male))+
   geom_histogram(bins = 6)
@@ -244,32 +252,50 @@ emp_hist
 
 # Stacked bar graph to visually represent the data???
 
-med_salary_male <- ggplot(data = emp_med_salary, aes(x = field, y = male, fill = status)) +   
-  geom_bar(stat = "identity", position = "dodge")
 
-ggplot(warp.m, aes(x = Wool, y = Breaks, group = Tension)) +
-geom_col(aes(fill = Tension),
-position = "dodge") +
-scale_fill_manual(values = c("gray70","gray40","gray20")) +
+data.melt <- melt(postdoc_med_salary[c('field', 'male', 'female')], id.vars = 1) 
+
+data.melt2 <- melt(emp_med_salary[c('field', 'male', 'female')], id.vars = 1)
+
+med_salary_postdoc <- ggplot(data = data.melt, aes(x = field, y = value, fill = variable)) +
+geom_col(stat = "identity", position = "dodge")+
+scale_fill_manual(labels = c("Male", "Female"), values = c("cornflowerblue","aquamarine")) +
 theme(panel.grid.major = element_blank(),
 panel.grid.minor = element_blank(),
 panel.background = element_blank(),
 axis.line = element_line(colour = "black")) +
-xlab("Wool Type") +
-ylab("Number of Breaks\nRecorded During Spinning") +
-ggtitle("Wool Strength by\nType and Tension") +
-scale_y_continuous(expand = c(0,0), limits = c(0,80), breaks = c(0,20,40,60,80)) +
-theme(text = element_text(family = "Times New Roman")) +
-theme(plot.title = element_text(hjust = 0.5))
+scale_x_discrete(breaks = c("ag_sci-nat_resources", "biological_biomedial", "health", "chemistry", "geo_atm_ocean", "physics_astronomy", "math_compsci", "phsycology", "economics", "social_sci", "engineering", "education", "Humanities and arts", "Business management and administration", "Other non-S&E fields"), labels = c("Agricultural sciences and\nnatural resources", "Biological and biomedical sciences", "Business management and administration", "Chemistry" , "Education", "Engineering", "Geosciences, Atmospheric, and ocean sciences", "Health sciences", "Humanities and arts", "Mathematics and computer sciences",  "Other non-S&E fields", "Psychology", "Physics and astronomy", "Economics", "Social sciences")) +
+ylab("Median Salary (US Dollars)") +
+  xlab("\nField")+
+theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
+  theme(axis.text.y = element_text(size = 11))+
+  theme(legend.title=element_blank())+
+  scale_y_continuous(expand = c(0,0))
 
-med_salary_male
-
-med_salary_female <- ggplot(data = med_salary, aes(x = field, y = female, fill = status)) +   geom_bar(stat = "identity", position = "dodge")
-
-med_salary_female
+  
 
 
-test <- ggplot(data = emp_med_salary, aes(x = field, fill = male + female)) +   geom_bar(stat = "identity", position = "dodge")
+med_salary_postdoc
+
+
+med_salary_emp <- ggplot(data =data.melt2, aes(x = field, y = value, fill = variable))  +
+geom_col(stat = "identity", position = "dodge")+
+scale_fill_manual(labels = c("Male", "Female"), values = c("cornflowerblue","aquamarine")) +
+theme(panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(),
+panel.background = element_blank(),
+axis.line = element_line(colour = "black")) +
+scale_x_discrete(breaks = c("ag_sci-nat_resources", "biological_biomedial", "health", "chemistry", "geo_atm_ocean", "physics_astronomy", "math_compsci", "phsycology", "economics", "social_sci", "engineering", "education", "Humanities and arts", "Business management and administration", "Other non-S&E fields"), labels = c("Agricultural sciences and\nnatural resources", "Biological and biomedical sciences", "Business management and administration", "Chemistry" , "Education", "Engineering", "Geosciences, Atmospheric, and ocean sciences", "Health sciences", "Humanities and arts", "Mathematics and computer sciences",  "Other non-S&E fields", "Psychology", "Physics and astronomy", "Economics", "Social sciences")) +
+ylab("Median Salary (US Dollars)") +
+    xlab("\nField")+
+theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
+  theme(axis.text.y = element_text(size = 11))+
+  theme(legend.title=element_blank())+
+  scale_y_continuous(expand = c(0,0))
+
+med_salary_emp
+
+
 
 
 ```
@@ -284,12 +310,22 @@ test <- ggplot(data = emp_med_salary, aes(x = field, fill = male + female)) +   
 wsr_postdoc <- wilcox.test(postdoc_med_salary$male, postdoc_med_salary$female, paired = TRUE)
 wsr_postdoc
 
+## need to run cliffs delta
 
 # Ho: There is NOT a significant differnece in median salary for male and female starting non-postdoc positions.
 # HA: There is a significant difference in mdeian salary for male and female starting non-postdoc positions.
 
 wsr_emp <- wilcox.test(emp_med_salary$male, emp_med_salary$female, paired = TRUE)
 wsr_emp
+
+## need to run cliffs delta
+
+cliffs_postdoc <- cliff.delta(postdoc_med_salary$male, postdoc_med_salary$female, paired = TRUE)
+cliffs_postdoc
+
+cliffs_emp <- cliff.delta(emp_med_salary$male, emp_med_salary$female, paired = TRUE)
+cliffs_emp
+
 
 ```
 There was no significant difference in median salary for male and female starting postdoc positions (W = 19.5, p = 0.884, alpha = 0.05)
@@ -298,54 +334,53 @@ There was a significant difference in median salary for male and female starting
 
 #### 4. Exploring academic salaries for professors in U.S. colleges
 
-```{r, include= FALSE}
-
-faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
-faculty_salary_model
-
-
-plot()
-summary()
-vif()
-aic()
-
-faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
-faculty_salary_model
-
+```{r, echo = FALSE, results= "asis"}
 
 faculty_salary_new <- faculty_salary %>% 
-  mutate(
-    Rank = case_when(
-      Faculty_Rank == "Prof" ~ 1,
-      Faculty_Rank == "AssocProf" ~ 2,
-      Faculty_Rank == "AsstProf" ~ 3
-    )
-  ) %>% 
-  mutate(sex = case_when(
-      Sex == "Male" ~ 1,
-      Sex == "Female" ~ 2
-  )
-  ) %>% 
-  select(Years_Since_Phd, Years_Service, Salary, Rank, sex) 
+  rename("Faculty Rank" = Faculty_Rank, "Years Since Phd" = Years_Since_Phd, "Years Service" = Years_Service)
 
-  pairs(faculty_salary_new)
+###Model 1
+faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
+faculty_salary_model
 
-faculty_salary_new
+
+plot(faculty_salary_model)
+summary(faculty_salary_model)
+vif(faculty_salary_model)
+# Years_since_phd and years_service are abouve the threshold of 4
+AIC(faculty_salary_model)
+#9128.612
 
 # Years since phd and years in service are highly correlated and therefore one should be removed from the model:
 
-faculty_salary_model2 <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
-faculty_salary_model2
-
-faculty_salary_model$Faculty_Rank <- factor(faculty_salary_model$Faculty_Rank)
-
-faculty_salary_model$Faculty_Rank <- fct_relevel(faculty_salary_model$Faculty_Rank, "Prof")
-
+###Model 2
 faculty_salary_model2 <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
 faculty_salary_model2
 
 
-# Create a graph
+plot(faculty_salary_model2)
+summary(faculty_salary_model2)
+vif(faculty_salary_model2)
+# all valuea are under 4
+AIC(faculty_salary_model2)
+#9129.512
+
+###Model 3
+
+faculty_salary_model3 <- lm(Salary ~ Faculty_Rank + Years_Service + Sex, data = faculty_salary)
+faculty_salary_model3
+
+###Model 4
+
+faculty_salary_model4 <- lm(Salary ~ Years_Since_Phd + Sex, data = faculty_salary)
+faculty_salary_model4
+
+lm_table <- stargazer(faculty_salary_model4, faculty_salary_model3, type = "html",
+          covariate.labels = c("Years Since Phd", "Salary (Assistant Professor)", "Salary (Professor)",
+                               "Years of Service", "Sex (Male)", "Constant"),
+          dep.var.caption  = "A better caption",
+          dep.var.labels   = "Salary (US Dollars)")
+ # Create a graph
 
 
 

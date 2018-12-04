@@ -29,7 +29,6 @@ library(ggsignif)
 library(reshape2)
 library(RColorBrewer)
 library(plotly)
-library(bit)
 
 faculty_salary <- read_csv("Faculty salary data.csv")
 
@@ -112,7 +111,7 @@ Year significantly predicts male graduate school enrollment (*b* = -17112153, t(
 
 Female: t(47) = 51.66, p < 0.001. Reject the null. Correlation = 0.99, which is a strong positive correlation.
 
-Year significantly predicts female graduate school enrollment (*b* = -17112153, t(`r male_r$parameter`) = `r round(male_r$statistic, 2)`, *p* < 0.001) with a strong positive correlation between the two (Pearson's *r* = `r round(male_r$estimate, 2)`). The overall model (Total gradute female enrollment = 30126(year) - 58955502) explains a significant amount of variance in male enrollment (F(1,47) = 2669, *p* < 0.001, R^2^ = 0.98).
+Year significantly predicts female graduate school enrollment (*b* = -17112153, t(`r female_r$parameter`) = `r round(female_r$statistic, 2)`, *p* < 0.001) with a strong positive correlation between the two (Pearson's *r* = `r round(female_r$estimate, 2)`). The overall model (Total gradute female enrollment = 30126(year) - 58955502) explains a significant amount of variance in male enrollment (F(1,47) = 2669, *p* < 0.001, R^2^ = 0.98).
 
 ```{r, echo = FALSE}
 

@@ -141,7 +141,7 @@ total_grad_mvf <- ggplot(grad_enroll, aes(x = year, y = male_total)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"), 
         )+
-  theme(legend.text=element_text(size = 15)) +
+  theme(legend.text=element_text(size = 12)) +
   theme(legend.title=element_blank()) 
     
   
@@ -204,20 +204,21 @@ chi_table <- kable(female_prop, caption = "**Table 1. Proportions of female reci
   
 chi_table
 
-# stacked bar graph?
+# stacked bar graph code
 
 female_phd_new <- as.data.frame(phd_female) %>% 
   mutate(., Field = c("Education", "Engineering", "Humanities & Art", "Physical Earth Sciences"))
 
-female_phd_melt <- melt(female_phd_new, id.vars = c("Field"), value.name = "Proportion")
+female_phd_melt <- melt(female_phd_new, id.vars = c("Field"), value.name = "Proportions")
 names(female_phd_melt)[2] <- paste("Year")
 
 column_stack <- ggplot()+
-  geom_bar(aes(x = Year, y= Proportion, fill = Field), data = female_phd_melt, stat = "identity")+
+  geom_bar(aes(x = Year, y= Proportions, fill = Field), data = female_phd_melt, stat = "identity")+
   labs(y="Median Salary (US Dollars)")+
   theme_classic()+
   scale_fill_manual(values= c("aquamarine3", "aquamarine1", "cornflowerblue", "turquoise4"))+
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0))+
+  ylab("Female Phd Recipients") 
 
 column_stack
 
@@ -263,7 +264,7 @@ theme(panel.grid.major = element_blank(),
 panel.grid.minor = element_blank(),
 panel.background = element_blank(),
 axis.line = element_line(colour = "black")) +
-scale_x_discrete(breaks = c("ag_sci-nat_resources", "biological_biomedial", "health", "chemistry", "geo_atm_ocean", "physics_astronomy", "math_compsci", "phsycology", "economics", "social_sci", "engineering", "education", "Humanities and arts", "Business management and administration", "Other non-S&E fields"), labels = c("Agricultural sciences and\nnatural resources", "Biological and biomedical sciences", "Business management and administration", "Chemistry" , "Education", "Engineering", "Geosciences, Atmospheric, and ocean sciences", "Health sciences", "Humanities and arts", "Mathematics and computer sciences",  "Other non-S&E fields", "Psychology", "Physics and astronomy", "Economics", "Social sciences")) +
+scale_x_discrete(breaks = c("ag_sci-nat_resources", "biological_biomedial", "Business management and administration", "chemistry", "economics", "education", "engineering", "geo_atm_ocean", "health", "Humanities and arts", "math_compsci", "Other non-S&E fields", "phsycology", "physics_astronomy", "social_sci"), labels = c("Agricultural sciences and\nnatural resources", "Biological and\nbiomedical sciences", "Business management and\nadministration", "Chemistry" , "Economics", "Education", "Engineering", "Geosciences, Atmospheric,\nand ocean sciences", "Health sciences", "Humanities and arts", "Mathematics and\ncomputer sciences",  "Other non-S&E fields", "Psychology", "Physics and astronomy", "Social Sciences")) +
 ylab("Median Salary (US Dollars)") +
   xlab("\nField")+
 theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
@@ -272,7 +273,6 @@ theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
   scale_y_continuous(expand = c(0,0))
 
   
-
 
 med_salary_postdoc
 
@@ -284,15 +284,17 @@ theme(panel.grid.major = element_blank(),
 panel.grid.minor = element_blank(),
 panel.background = element_blank(),
 axis.line = element_line(colour = "black")) +
-scale_x_discrete(breaks = c("ag_sci-nat_resources", "biological_biomedial", "health", "chemistry", "geo_atm_ocean", "physics_astronomy", "math_compsci", "phsycology", "economics", "social_sci", "engineering", "education", "Humanities and arts", "Business management and administration", "Other non-S&E fields"), labels = c("Agricultural sciences and\nnatural resources", "Biological and biomedical sciences", "Business management and administration", "Chemistry" , "Education", "Engineering", "Geosciences, Atmospheric, and ocean sciences", "Health sciences", "Humanities and arts", "Mathematics and computer sciences",  "Other non-S&E fields", "Psychology", "Physics and astronomy", "Economics", "Social sciences")) +
 ylab("Median Salary (US Dollars)") +
     xlab("\nField")+
+scale_x_discrete(breaks = c("ag_sci-nat_resources", "biological_biomedial", "Business management and administration", "chemistry", "economics", "education", "engineering", "geo_atm_ocean", "health", "Humanities and arts", "math_compsci", "Other non-S&E fields", "phsycology", "physics_astronomy", "social_sci"), labels = c("Agricultural sciences and\nnatural resources", "Biological and\nbiomedical sciences", "Business management and\nadministration", "Chemistry" , "Economics", "Education", "Engineering", "Geosciences, Atmospheric,\nand ocean sciences", "Health sciences", "Humanities and arts", "Mathematics and\ncomputer sciences",  "Other non-S&E fields", "Psychology", "Physics and astronomy", "Social Sciences")) +
 theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
   theme(axis.text.y = element_text(size = 11))+
   theme(legend.title=element_blank())+
   scale_y_continuous(expand = c(0,0))
+windows()
 
 med_salary_emp
+
 
 
 
@@ -321,15 +323,16 @@ wsr_emp
 
 cliffs_postdoc <- cliff.delta(postdoc_med_salary$male, postdoc_med_salary$female, paired = TRUE)
 cliffs_postdoc
+## Cliffs delta is .04 (small)
 
 cliffs_emp <- cliff.delta(emp_med_salary$male, emp_med_salary$female, paired = TRUE)
 cliffs_emp
-
+## Cliffs Delta is .213 (small) - but because there isa significant difference is just means voerall the magnitude of the differences is small between male and female salaries in employment positions after recieving a phd
 
 ```
-There was no significant difference in median salary for male and female starting postdoc positions (W = 19.5, p = 0.884, alpha = 0.05)
+There was no significant difference in median salary for male and female starting postdoc positions (V = 19.5, p = 0.888, alpha = 0.05)
 
-There was a significant difference in median salary for male and female starting in non-post-doc employment positions (W = 101, p = 0.002, alpha = 0.05)
+There was a significant difference in median salary for male and female starting in non-post-doc employment positions (V = 101, p = 0.003, alpha = 0.05)
 
 #### 4. Exploring academic salaries for professors in U.S. colleges
 
@@ -339,7 +342,7 @@ faculty_salary_new <- faculty_salary %>%
   rename("Faculty Rank" = Faculty_Rank, "Years Since Phd" = Years_Since_Phd, "Years Service" = Years_Service)
 
 ###Model 1
-faculty_salary_model <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
+faculty_salary_model <- lm(Salary ~ Discipline + Faculty_Rank + Years_Since_Phd + Years_Service + Sex, data = faculty_salary)
 faculty_salary_model
 
 
@@ -353,42 +356,44 @@ AIC(faculty_salary_model)
 # Years since phd and years in service are highly correlated and therefore one should be removed from the model:
 
 ###Model 2
-faculty_salary_model2 <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
+faculty_salary_model2 <- lm(Salary ~ Discipline + Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
 faculty_salary_model2
 
 
 plot(faculty_salary_model2)
 summary(faculty_salary_model2)
-vif(faculty_salary_model2)
-# all valuea are under 4
-AIC(faculty_salary_model2)
-#9129.512
+
 
 ###Model 3
 
-faculty_salary_model3 <- lm(Salary ~ Faculty_Rank + Years_Service + Sex, data = faculty_salary)
+faculty_salary_model3 <- lm(Salary ~ Faculty_Rank + Years_Since_Phd + Sex, data = faculty_salary)
 faculty_salary_model3
 
 ###Model 4
 
-faculty_salary_model4 <- lm(Salary ~ Years_Since_Phd + Sex, data = faculty_salary)
+faculty_salary_model4 <- lm(Salary ~ Discipline + Years_Since_Phd + Sex, data = faculty_salary)
 faculty_salary_model4
 
-lm_table <- stargazer(faculty_salary_model4, faculty_salary_model3, type = "html",
-          covariate.labels = c("Years Since Phd", "Salary (Assistant Professor)", "Salary (Professor)",
-                               "Years of Service", "Sex (Male)", "Constant"),
-          dep.var.caption  = "A better caption",
-          dep.var.labels   = "Salary (US Dollars)")
- # Create a graph
+summary(faculty_salary_model4)
 
 
+### Model 2 and 4 are the best and what we will compare in our table
 
-# a. Make predictions using the new data frame:
+lm_table <- stargazer(faculty_salary_model4, faculty_salary_model2, type = "html")
 
+# Information for model 2:
 
+vif(faculty_salary_model2)
+# all values are under 4
+AIC(faculty_salary_model2)
+#9096.813
 
-# b. Bind predictions to the data to make it actually useful:
+# Information for model 4
 
+vif(faculty_salary_model4)
+# all values are under 4, and lower than model 2 (this means less likely to be correlated)
+AIC(faculty_salary_model4)
+#9217.169
 
 ```
 

@@ -162,7 +162,7 @@ phd_female_chi2
 
 number of female phd recipients per field differed significantly between 1985 (n = ) and 2000 (n = ) and 2015 (n =) ($\chi^2${`r phd_female_chi2$parameter`} = ....., p < 0.001). Notably, ....
 
-```{r, echo= FALSE}
+```{r, echo = FALSE}
 
 # Make a table of proportions
 
@@ -196,8 +196,6 @@ column_stack <- ggplot()+
 
 column_stack
 
-
-### maybe we can add expected proportions to the table if there is no difference between the groups
 ```
 
 
@@ -206,7 +204,7 @@ column_stack
 Does median salary differ significantly between male and female starting postdoc positions? Does median salary differ significantly between male and female PhD recipients in non-postdoc employment positions?
 
 
-```{r, echo = FALSE, fig.width= 10, fig.height= 7, fig.align = 'center'}
+```{r, include = FALSE}
 
 # Exploratory graph
 
@@ -224,12 +222,17 @@ emp_hist <- ggplot(emp_med_salary, aes(x = male)) +
   geom_histogram(bins = 6)
 emp_hist
 
-# Stacked bar graph to visually represent the data???
+```
 
+
+```{r, echo = FALSE, fig.width= 10, fig.height= 7, fig.align = 'center'}
 
 data.melt <- melt(postdoc_med_salary[c('field', 'male', 'female')], id.vars = 1) 
 
 data.melt2 <- melt(emp_med_salary[c('field', 'male', 'female')], id.vars = 1)
+
+
+# column graph for postdoc
 
 med_salary_postdoc <- ggplot(data = data.melt, aes(x = field, y = value, fill = variable)) +
 geom_col(stat = "identity", position = "dodge")+
@@ -251,6 +254,8 @@ theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
 med_salary_postdoc
 
 
+# Column graph for employment
+
 med_salary_emp <- ggplot(data =data.melt2, aes(x = field, y = value, fill = variable))  +
 geom_col(stat = "identity", position = "dodge")+
 scale_fill_manual(labels = c("Male", "Female"), values = c("cornflowerblue","aquamarine")) +
@@ -269,9 +274,11 @@ theme(axis.text.x = element_text(angle = 60, hjust =1, size = 11))+
 
 med_salary_emp
 
+
 ```
 
-```{r, echo = FALSE, include=FALSE}
+
+```{r, echo = FALSE, include = FALSE}
 
 # Wilcoxon-Signed Ranked (non-parametric, paired)
 
@@ -306,7 +313,7 @@ There was a significant difference in median salary for male and female starting
 
 #### 4. Exploring academic salaries for professors in U.S. colleges
 
-```{r, echo = FALSE, results= "asis"}
+```{r, include = FALSE}
 
 faculty_salary_new <- faculty_salary %>% 
   rename("Faculty Rank" = Faculty_Rank, "Years Since Phd" = Years_Since_Phd, "Years Service" = Years_Service)
@@ -346,6 +353,11 @@ faculty_salary_model4
 
 summary(faculty_salary_model4)
 
+```
+
+
+
+```{r, echo = FALSE, results= "asis"}
 
 ### Model 2 and 4 are the best and what we will compare in our table
 
